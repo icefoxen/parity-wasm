@@ -1,5 +1,5 @@
 use std::io;
-use byteorder::{LittleEndian, ByteOrder};
+use byteorder::{BigEndian, LittleEndian, ByteOrder};
 
 use super::{Deserialize, Serialize, Error, Uint32};
 use super::section::{
@@ -20,7 +20,7 @@ pub struct Module {
 impl Default for Module {
     fn default() -> Self {
         Module {
-            magic: 0x6d736100,
+            magic: LittleEndian::read_u32(&WASM_MAGIC_NUMBER),
             version: 1,
             sections: Vec::with_capacity(16),
         }
@@ -253,6 +253,15 @@ mod integration_tests {
 
     use super::super::{deserialize_file, serialize, deserialize_buffer, Section};
     use super::Module;
+
+    #[test]
+    fn module_default_round_trip() {
+        let module1 = Module::default();
+        let buf = serialize(module1).expect("Serialization should succeed");
+
+        let module2: Module = deserialize_buffer(&buf).expect("Deserialization should succeed");
+        assert_eq!(Module::default().magic, module2.magic);
+    }
 
     #[test]
     fn hello() {
